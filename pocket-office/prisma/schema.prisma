@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─── NextAuth ───────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  passwordHash  String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  memberships   TenantMember[]
+  tasks         Task[]        @relation("TaskAssignee")
+  comments      Comment[]
+  aiCoworkers   AICoworker[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Организация ────────────────────────────────────────
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  members   TenantMember[]
+  projects  Project[]
+  auditLogs AuditLog[]
+  aiCoworkers AICoworker[]
+}
+
+model TenantMember {
+  id       String @id @default(cuid())
+  userId   String
+  tenantId String
+  role     String @default("MEMBER") // ADMIN | MEMBER | VIEWER
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId])
+}
+
+// ─── Проекты и задачи ───────────────────────────────────
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  tenantId    String
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tasks  Task[]
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      String   @default("BACKLOG")       // BACKLOG | ANALYZING | PENDING_APPROVAL | IN_PROGRESS | REVIEW | CLOSED
+  priority    String   @default("MEDIUM")        // LOW | MEDIUM | HIGH | CRITICAL
+  projectId   String
+  assigneeId  String?
+  parentId    String?
+  plan        String?                            // JSON
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee    User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  parent      Task?        @relation("Subtasks", fields: [parentId], references: [id])
+  children    Task[]       @relation("Subtasks")
+  comments    Comment[]
+  logs        TaskLog[]
+  attachments Attachment[]
+  subtasks    Subtask[]
+}
+
+model Subtask {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      String   @default("TODO")  // TODO | IN_PROGRESS | DONE
+  taskId      String
+  assigneeId  String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  task     Task        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  assignee AICoworker? @relation(fields: [assigneeId], references: [id])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  taskId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  task        Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attachments Attachment[]
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  filename  String
+  url       String
+  taskId    String?
+  commentId String?
+  createdAt DateTime @default(now())
+
+  task    Task?    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+}
+
+// ─── ИИ-сотрудники ──────────────────────────────────────
+
+model AICoworker {
+  id           String   @id @default(cuid())
+  name         String
+  role         String
+  systemPrompt String
+  skills       String   @default("[]")            // JSON array
+  llmModel     String   @default("openrouter/free")
+  status       String   @default("IDLE")          // IDLE | BUSY | OFFLINE
+  tenantId     String
+  userId       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  creator  User      @relation(fields: [userId], references: [id])
+  subtasks Subtask[]
+}
+
+// ─── Логи ───────────────────────────────────────────────
+
+model TaskLog {
+  id         String   @id @default(cuid())
+  taskId     String
+  fromStatus String?
+  toStatus   String
+  userId     String?
+  createdAt  DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String
+  userId     String?
+  tenantId   String
+  metadata   String?   // JSON
+  createdAt  DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
