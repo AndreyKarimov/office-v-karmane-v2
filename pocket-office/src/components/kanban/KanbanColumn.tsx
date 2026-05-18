@@ -45,7 +45,7 @@ export function KanbanColumn({
                 <p className="text-body-md text-outline">Нет задач</p>
               </div>
             )}
-            {tasks.map((task, index) => (
+            {tasks.map((task) => (
               <KanbanCard key={task.id} task={task} />
             ))}
             {provided.placeholder}

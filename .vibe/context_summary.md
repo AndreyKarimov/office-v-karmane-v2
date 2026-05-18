@@ -65,7 +65,7 @@ Cognitive Enterprise — Strategic Blue (#003d9b) + Neural Teal (#006b5f) + Inte
 
 ## Текущий статус
 
-**Спринт 0 (Фундамент) выполнен.**
+**Спринт 1 (ИИ-менеджер — анализ) выполнен.**
 
 ### Работает:
 - Регистрация → авто-логин → онбординг → демо-проект с задачей
@@ -84,11 +84,11 @@ Cognitive Enterprise — Strategic Blue (#003d9b) + Neural Teal (#006b5f) + Inte
 - Тесты → Спринты 1-3
 
 ### Ожидает:
-- Форма создания задачи (пока заглушка)
-- Детальная страница задачи с реальными данными
 - Google OAuth (нужны ключи)
-- LLM Provider Adapter
-- ИИ-менеджер (анализ, вопросы, план)
+- ИИ-сотрудники (Спринт 3)
+
+### Перенесено в другие спринты:
+- US-009 (сброс пароля) → Спринт 8
 
 ### Важные нюансы для следующей сессии:
 - Prisma 7 использует driver adapter (@prisma/adapter-libsql). БЕЗ адаптера PrismaClient не создастся.
@@ -97,5 +97,9 @@ Cognitive Enterprise — Strategic Blue (#003d9b) + Neural Teal (#006b5f) + Inte
 - Zod v4: `parsed.error.issues` (не `.errors`).
 - Регистрация: registerAction возвращает email/password → клиент вызывает signIn("credentials") → редирект на /onboarding. Без этого шага сессия не создаётся.
 - `signIn` из `next-auth/react` (клиент), `auth()` из `@/lib/auth` (сервер).
+- LLM Provider Adapter работает без API-ключа (graceful degradation с fallback-планами).
+- AI Manager анализирует задачу автоматически при создании (client-side вызов runAIAnalysis).
+- Уточняющие вопросы — до 3 циклов через комментарии.
+- План генерируется и сохраняется в JSON-поле `plan` модели Task, подзадачи — в модели Subtask.
 
-**Следующий этап:** Спринт 1 — ИИ-менеджер (анализ задачи и генерация плана). Ключевые файлы для старта: `src/lib/task-actions.ts`, `src/components/kanban/KanbanBoard.tsx`, `src/app/(dashboard)/tasks/[id]/page.tsx`.
+**Следующий этап:** Спринт 2 — ИИ-менеджер (утверждение плана и жизненный цикл задачи).

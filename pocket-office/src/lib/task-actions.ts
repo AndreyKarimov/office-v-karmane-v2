@@ -14,6 +14,7 @@ export type TaskData = {
   assigneeId: string | null;
   assignee: { name: string | null; image: string | null } | null;
   project: { name: string } | null;
+  plan: string | null;
   createdAt: Date;
 };
 
@@ -65,6 +66,34 @@ export async function createTask(input: CreateTaskInput) {
 
   revalidatePath("/dashboard");
   return task;
+}
+
+export async function getTaskById(taskId: string) {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+
+  const membership = await prisma.tenantMember.findFirst({
+    where: { userId: session.user.id },
+  });
+  if (!membership) return null;
+
+  return prisma.task.findUnique({
+    where: { id: taskId },
+    include: {
+      assignee: { select: { name: true, image: true } },
+      project: { select: { name: true } },
+      subtasks: {
+        orderBy: { sortOrder: "asc" },
+        include: {
+          assignee: { select: { name: true, role: true } },
+        },
+      },
+      logs: {
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      },
+    },
+  });
 }
 
 export async function updateTaskStatus(taskId: string, newStatus: string) {
