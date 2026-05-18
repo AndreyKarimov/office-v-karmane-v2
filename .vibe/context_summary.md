@@ -1,6 +1,6 @@
 # .vibe/context_summary.md
 
-## Дата обновления: 18.05.2026
+## Дата обновления: 19.05.2026
 
 ## Продукт
 
@@ -65,41 +65,39 @@ Cognitive Enterprise — Strategic Blue (#003d9b) + Neural Teal (#006b5f) + Inte
 
 ## Текущий статус
 
-**Спринт 1 (ИИ-менеджер — анализ) выполнен.**
+**Спринты 1–3 выполнены. MVP готов к деплою.**
 
 ### Работает:
 - Регистрация → авто-логин → онбординг → демо-проект с задачей
-- Вход (email/пароль)
-- Выход (из Header)
-- Dashboard: канбан-доска с задачами из БД
-- Drag-and-drop задач между колонками (с записью в TaskLog)
-- Проекты в левом сайдбаре (из БД)
-- Защита /dashboard/* через middleware
-- Редирект авторизованных с /login, /register на /dashboard
-- Сборка и TypeScript чисты
-
-### Перенесено в другие спринты:
-- US-009 (сброс пароля) → Спринт 8
-- US-038 (комментарии) → Спринт 1
-- Тесты → Спринты 1-3
+- Вход (email/пароль), выход
+- Канбан-доска: 6 колонок, drag-and-drop (TaskLog), счётчики
+- Создание задачи → авто-анализ ИИ-менеджером (fallback без API-ключа)
+- Уточняющие вопросы (до 3 циклов) → генерация плана → утверждение
+- Подзадачи с прогресс-баром и % выполнения
+- Смена ответственного (люди + ИИ-сотрудники)
+- Приёмка задачи (REVIEW → CLOSED / отклонить)
+- Комментарии к задаче
+- Найм ИИ-сотрудников через опросник
+- Экран «Моя команда» с реальными данными
+- Очередь подзадач (FIFO + приоритет)
+- Цикл выполнения подзадачи (TODO → IN_PROGRESS → DONE)
+- Создание проектов
+- Middleware: защита /dashboard, /tasks, /new-task, /team, /audit, /billing
+- 7 API-роутов, 69 unit-тестов, сборка и линтер чисты
 
 ### Ожидает:
 - Google OAuth (нужны ключи)
-- ИИ-сотрудники (Спринт 3)
-
-### Перенесено в другие спринты:
-- US-009 (сброс пароля) → Спринт 8
+- Валидация drag-and-drop через Draggable (сейчас только Droppable)
 
 ### Важные нюансы для следующей сессии:
-- Prisma 7 использует driver adapter (@prisma/adapter-libsql). БЕЗ адаптера PrismaClient не создастся.
-- NextAuth v5 beta — импорты из `next-auth` (не `@auth/core`).
-- Middleware deprecation warning — в Next.js 16 вместо middleware.ts нужно proxy.ts. Пока работает.
-- Zod v4: `parsed.error.issues` (не `.errors`).
-- Регистрация: registerAction возвращает email/password → клиент вызывает signIn("credentials") → редирект на /onboarding. Без этого шага сессия не создаётся.
-- `signIn` из `next-auth/react` (клиент), `auth()` из `@/lib/auth` (сервер).
-- LLM Provider Adapter работает без API-ключа (graceful degradation с fallback-планами).
-- AI Manager анализирует задачу автоматически при создании (client-side вызов runAIAnalysis).
-- Уточняющие вопросы — до 3 циклов через комментарии.
-- План генерируется и сохраняется в JSON-поле `plan` модели Task, подзадачи — в модели Subtask.
+- Prisma 7: @prisma/adapter-libsql. БЕЗ адаптера PrismaClient не создастся
+- NextAuth v5 beta: импорты из `next-auth`, не `@auth/core`
+- Middleware deprecation warning — в Next.js 16 вместо middleware.ts нужно proxy.ts
+- Zod v4: `parsed.error.issues` (не `.errors`)
+- Регистрация: registerAction → signIn("credentials") → /onboarding
+- `signIn` из `next-auth/react` (клиент), `auth()` из `@/lib/auth` (сервер)
+- LLM Provider: graceful degradation без API-ключа
+- URL без `/dashboard`-префикса: `/new-task`, `/tasks/[id]`, `/team`, `/team/hire`
+- Все server actions в файлах с `"use server"` должны быть ТОЛЬКО async-функциями
 
-**Следующий этап:** Спринт 2 — ИИ-менеджер (утверждение плана и жизненный цикл задачи).
+**Следующий этап:** Спринт 4 — ИИ-контроллер и эскалация. Или деплой MVP (см. IMPLEMENTATION_PLAN.md).
