@@ -3,9 +3,9 @@
 ## Текущий статус
 
 - **Проект:** Платформа оркестрации ИИ-команд «Офис в кармане»
-- **Текущий этап:** Спринт 1 (ИИ-менеджер — анализ) — выполнен. Ожидается Спринт 2 (ИИ-менеджер — утверждение).
-- **Прогресс:** 42% (Этапы 0, 1, 2, Спринты 0-1 выполнены)
-- **Последний успешный коммит:** Sprint 1: AI-Manager — task analysis + plan generation
+- **Текущий этап:** Спринты 1–3 (ИИ-менеджер + ИИ-сотрудники) — выполнены. Ожидается деплой MVP.
+- **Прогресс:** 55% (Этапы 0–2, Спринты 0–3 выполнены)
+- **Последний успешный коммит:** Sprint 2+3: AI-Manager lifecycle + AI-Coworkers
 - **Текущая ветка:** master
 
 ## Быстрые команды
@@ -38,6 +38,7 @@ npx prisma studio  # Визуальный редактор БД
   - `lib/llm-provider.ts` — LLM Provider Adapter (OpenRouter → OpenAI SDK, fallback, sanitizeInput)
   - `lib/ai-manager-actions.ts` — AI Manager actions (runAIAnalysis, processUserAnswer, approvePlan, rejectPlan)
   - `lib/comment-actions.ts` — server actions (getComments, createComment, createAICComment)
+  - `lib/ai-coworker-actions.ts` — AI Coworker actions (hire, queue, execute)
   - `lib/env.ts` — переменные окружения
   - `components/ui/` — Button, Card, Input, Chip, Avatar
   - `components/layout/` — Header (клиентский, с сессией и logout), Sidebar, MobileNav
@@ -64,8 +65,8 @@ npx prisma studio  # Визуальный редактор БД
 | 2 | Дизайн и вёрстка UI | ✅ |
 | 3.0 | Спринт 0: Фундамент | ✅ |
 | 3.1 | Спринт 1: ИИ-менеджер — анализ | ✅ |
-| 3.2 | Спринт 2: ИИ-менеджер — утверждение | ⬜ |
-| 3.3 | Спринт 3: ИИ-сотрудники | ⬜ |
+| 3.2 | Спринт 2: ИИ-менеджер — утверждение | ✅ |
+| 3.3 | Спринт 3: ИИ-сотрудники | ✅ |
 | 🚀 | Деплой MVP | ⬜ |
 | 3.4-3.13 | Спринты 4-13 (пост-MVP) | ⬜ |
 | I | Индустриализация | ⬜ |
@@ -113,3 +114,26 @@ npx prisma studio  # Визуальный редактор БД
 - ✅ Graceful degradation при недоступности LLM (fallback-планы)
 - ✅ Unit-тесты (35 тестов: sanitize, fallback analysis/plan, 3-cycle logic, API error handling)
 - ✅ E2E Playwright тесты (sprint-1.spec.ts)
+
+## Результаты Спринта 2
+
+### Что реализовано:
+- ✅ US-026: Утверждение плана → IN_PROGRESS, подзадачи в работу
+- ✅ US-027: Отклонение плана с причиной → ANALYZING
+- ✅ US-028: Дерево подзадач с прогресс-баром и % выполнения
+- ✅ US-030: Смена ответственного через выпадающий список (люди + ИИ)
+- ✅ US-037: Приёмка задачи (REVIEW → CLOSED / отклонить на доработку)
+- ✅ Валидация переходов статусов (запрет недопустимых переходов)
+- ✅ API-роуты: /api/tasks/[id]/approve, /api/tasks/[id]/reject, /api/tasks/[id]/assign
+- ✅ Unit-тесты (34 теста: статусы, переходы, прогресс)
+
+## Результаты Спринта 3
+
+### Что реализовано:
+- ✅ US-042: Найм ИИ-сотрудника через опросник (имя → роль → навыки → промпт)
+- ✅ US-041: Экран «Моя команда» с реальными данными из БД
+- ✅ US-031: Декомпозиция задачи с назначением по скилам
+- ✅ US-032: Персональная очередь подзадач для каждого ИИ-сотрудника
+- ✅ US-033: Базовый цикл выполнения подзадачи (TODO → IN_PROGRESS → DONE)
+- ✅ API-роуты: /api/ai-coworkers, интеграция с assignee
+- ✅ Unit-тесты (validation, queue sorting, skills parsing, execution cycle)

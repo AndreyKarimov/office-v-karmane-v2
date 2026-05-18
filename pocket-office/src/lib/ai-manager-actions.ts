@@ -380,3 +380,257 @@ export async function getTaskWithDetails(taskId: string) {
 
   return task;
 }
+
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  BACKLOG: ["ANALYZING"],
+  ANALYZING: ["PENDING_APPROVAL", "BACKLOG"],
+  PENDING_APPROVAL: ["IN_PROGRESS", "ANALYZING"],
+  IN_PROGRESS: ["REVIEW", "ANALYZING"],
+  REVIEW: ["CLOSED", "ANALYZING", "IN_PROGRESS"],
+  CLOSED: [],
+};
+
+function isValidTransition(from: string, to: string): boolean {
+  const allowed = VALID_TRANSITIONS[from];
+  return allowed ? allowed.includes(to) : false;
+}
+
+export async function updateTaskStatusWithValidation(
+  taskId: string,
+  newStatus: string,
+): Promise<{ success: boolean; message: string }> {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, message: "Unauthorized" };
+
+  const task = await prisma.task.findUnique({ where: { id: taskId } });
+  if (!task) return { success: false, message: "Task not found" };
+
+  if (!isValidTransition(task.status, newStatus)) {
+    return {
+      success: false,
+      message: `Invalid transition from ${task.status} to ${newStatus}`,
+    };
+  }
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { status: newStatus },
+  });
+
+  await prisma.taskLog.create({
+    data: {
+      taskId,
+      fromStatus: task.status,
+      toStatus: newStatus,
+      userId: session.user.id,
+    },
+  });
+
+  revalidatePath(`/tasks/${taskId}`);
+  revalidatePath("/dashboard");
+
+  return { success: true, message: `Status changed to ${newStatus}` };
+}
+
+export async function acceptTask(
+  taskId: string,
+): Promise<{ success: boolean; message: string }> {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, message: "Unauthorized" };
+
+  const task = await prisma.task.findUnique({ where: { id: taskId } });
+  if (!task) return { success: false, message: "Task not found" };
+
+  if (task.status !== "REVIEW") {
+    return { success: false, message: "Task is not in review" };
+  }
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { status: "CLOSED" },
+  });
+
+  await prisma.taskLog.create({
+    data: {
+      taskId,
+      fromStatus: "REVIEW",
+      toStatus: "CLOSED",
+      userId: session.user.id,
+    },
+  });
+
+  revalidatePath(`/tasks/${taskId}`);
+  revalidatePath("/dashboard");
+
+  return { success: true, message: "Task accepted and closed" };
+}
+
+export async function rejectFromReview(
+  taskId: string,
+  reason: string,
+): Promise<{ success: boolean; message: string }> {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, message: "Unauthorized" };
+
+  const task = await prisma.task.findUnique({ where: { id: taskId } });
+  if (!task) return { success: false, message: "Task not found" };
+
+  if (task.status !== "REVIEW") {
+    return { success: false, message: "Task is not in review" };
+  }
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { status: "ANALYZING" },
+  });
+
+  await prisma.taskLog.create({
+    data: {
+      taskId,
+      fromStatus: "REVIEW",
+      toStatus: "ANALYZING",
+      userId: session.user.id,
+    },
+  });
+
+  const aiUserId = await getOrCreateAIManagerUser();
+  await createAICComment(
+    taskId,
+    `❌ Задача отклонена на приёмке.\nПричина: ${reason}\n\nЗадача возвращена на анализ.`,
+    aiUserId,
+  );
+
+  revalidatePath(`/tasks/${taskId}`);
+  revalidatePath("/dashboard");
+
+  return { success: true, message: "Task rejected, returned to analyzing" };
+}
+
+export async function updateSubtaskStatus(
+  subtaskId: string,
+  newStatus: string,
+): Promise<{ success: boolean; message: string }> {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, message: "Unauthorized" };
+
+  const subtask = await prisma.subtask.findUnique({
+    where: { id: subtaskId },
+    include: { task: true },
+  });
+  if (!subtask) return { success: false, message: "Subtask not found" };
+
+  if (!["TODO", "IN_PROGRESS", "DONE"].includes(newStatus)) {
+    return { success: false, message: "Invalid subtask status" };
+  }
+
+  await prisma.subtask.update({
+    where: { id: subtaskId },
+    data: { status: newStatus },
+  });
+
+  const allSubtasks = await prisma.subtask.findMany({
+    where: { taskId: subtask.taskId },
+  });
+
+  const allDone = allSubtasks.length > 0 && allSubtasks.every((s) => {
+    if (s.id === subtaskId) return newStatus === "DONE";
+    return s.status === "DONE";
+  });
+
+  if (allDone && subtask.task.status === "IN_PROGRESS") {
+    await prisma.task.update({
+      where: { id: subtask.taskId },
+      data: { status: "REVIEW" },
+    });
+
+    await prisma.taskLog.create({
+      data: {
+        taskId: subtask.taskId,
+        fromStatus: "IN_PROGRESS",
+        toStatus: "REVIEW",
+        userId: session.user.id,
+      },
+    });
+  }
+
+  revalidatePath(`/tasks/${subtask.taskId}`);
+  revalidatePath("/dashboard");
+
+  return { success: true, message: `Subtask status updated to ${newStatus}` };
+}
+
+export async function assignTask(
+  taskId: string,
+  assigneeId: string,
+): Promise<{ success: boolean; message: string }> {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, message: "Unauthorized" };
+
+  const task = await prisma.task.findUnique({ where: { id: taskId } });
+  if (!task) return { success: false, message: "Task not found" };
+
+  if (task.status === "CLOSED") {
+    return { success: false, message: "Cannot reassign closed task" };
+  }
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { assigneeId },
+  });
+
+  revalidatePath(`/tasks/${taskId}`);
+  revalidatePath("/dashboard");
+
+  return { success: true, message: "Assignee updated" };
+}
+
+export async function getAssignableMembers() {
+  const session = await auth();
+  if (!session?.user?.id) return [];
+
+  const membership = await prisma.tenantMember.findFirst({
+    where: { userId: session.user.id },
+  });
+  if (!membership) return [];
+
+  const users = await prisma.user.findMany({
+    where: {
+      memberships: { some: { tenantId: membership.tenantId } },
+    },
+    select: { id: true, name: true, email: true },
+  });
+
+  const aiCoworkers = await prisma.aICoworker.findMany({
+    where: { tenantId: membership.tenantId },
+    select: { id: true, name: true, role: true },
+  });
+
+  return [
+    ...users.map((u) => ({
+      id: u.id,
+      name: u.name || u.email,
+      type: "human" as const,
+    })),
+    ...aiCoworkers.map((cw) => ({
+      id: cw.id,
+      name: `${cw.name} (${cw.role})`,
+      type: "ai" as const,
+    })),
+  ];
+}
+
+export async function updateTaskPlan(
+  taskId: string,
+  planJson: string,
+): Promise<{ success: boolean; message: string }> {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, message: "Unauthorized" };
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { plan: planJson },
+  });
+
+  revalidatePath(`/tasks/${taskId}`);
+  return { success: true, message: "Plan updated" };
+}

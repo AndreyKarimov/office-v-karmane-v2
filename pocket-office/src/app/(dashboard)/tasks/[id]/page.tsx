@@ -3,9 +3,11 @@ import { Chip } from "@/components/ui/Chip";
 import { Avatar } from "@/components/ui/Avatar";
 import { getTaskById } from "@/lib/task-actions";
 import { getComments } from "@/lib/comment-actions";
+import { getAssignableMembers } from "@/lib/ai-manager-actions";
 import { TaskActions } from "./TaskActions";
 import { CommentSection } from "./CommentSection";
 import { PlanView } from "./PlanView";
+import { AssigneeSelect } from "./AssigneeSelect";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -14,7 +16,7 @@ const statusLabels: Record<string, string> = {
   ANALYZING: "На анализе",
   PENDING_APPROVAL: "На утверждении",
   IN_PROGRESS: "В работе",
-  REVIEW: "На проверке",
+  REVIEW: "На приёмке",
   CLOSED: "Закрыто",
 };
 
@@ -46,6 +48,7 @@ export default async function TaskPage({
 
   const comments = await getComments(id);
   const plan = task.plan ? JSON.parse(task.plan as string) : null;
+  const members = await getAssignableMembers();
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-6">
@@ -99,7 +102,16 @@ export default async function TaskPage({
                   <p className="text-label-sm text-secondary">План выполнения</p>
                 </div>
               </div>
-              <PlanView plan={plan} taskStatus={task.status} taskId={task.id} />
+              <PlanView
+                plan={plan}
+                taskStatus={task.status}
+                taskId={task.id}
+                subtasks={task.subtasks.map((s) => ({
+                  id: s.id,
+                  title: s.title,
+                  status: s.status,
+                }))}
+              />
             </Card>
           )}
 
@@ -156,9 +168,17 @@ export default async function TaskPage({
                 <dd className="text-on-surface">{task.project?.name || "—"}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-on-surface-variant">Исполнитель</dt>
+                <dt className="text-on-surface-variant">Ответственный</dt>
                 <dd className="text-on-surface">
-                  {task.assignee?.name || "Не назначен"}
+                  {task.status !== "CLOSED" ? (
+                    <AssigneeSelect
+                      taskId={task.id}
+                      currentAssigneeId={task.assigneeId}
+                      members={members}
+                    />
+                  ) : (
+                    task.assignee?.name || "Не назначен"
+                  )}
                 </dd>
               </div>
               <div className="flex justify-between">
@@ -175,7 +195,7 @@ export default async function TaskPage({
               <h3 className="text-label-md font-semibold text-on-surface mb-3">
                 История
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-64 overflow-y-auto">
                 {task.logs.map((log) => (
                   <div key={log.id} className="text-body-md">
                     <p className="text-on-surface">

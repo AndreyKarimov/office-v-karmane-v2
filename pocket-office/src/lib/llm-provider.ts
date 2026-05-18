@@ -30,7 +30,7 @@ function getClient(): OpenAI | null {
   });
 }
 
-async function chat(
+export async function chat(
   systemPrompt: string,
   userMessage: string,
 ): Promise<string> {
