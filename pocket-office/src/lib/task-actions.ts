@@ -146,3 +146,23 @@ export async function getProjects() {
     orderBy: { createdAt: "asc" },
   });
 }
+
+export async function createProject(name: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const membership = await prisma.tenantMember.findFirst({
+    where: { userId: session.user.id },
+  });
+  if (!membership) throw new Error("No tenant");
+
+  const project = await prisma.project.create({
+    data: {
+      name: name.trim(),
+      tenantId: membership.tenantId,
+    },
+  });
+
+  revalidatePath("/dashboard");
+  return project;
+}

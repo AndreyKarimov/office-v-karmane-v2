@@ -10,7 +10,7 @@ test.describe("Sprint 1: AI-Manager task flow", () => {
 
     await page.waitForURL(/\/dashboard/);
 
-    await page.click('a[href="/dashboard/new-task"]');
+    await page.click('a[href="/new-task"]');
     await page.waitForURL(/\/new-task/);
 
     await page.fill(
@@ -60,7 +60,7 @@ test.describe("Sprint 1: AI-Manager task flow", () => {
     await page.waitForURL(/\/dashboard/);
 
     const taskLink = page.locator(
-      'a[href^="/dashboard/tasks/"]',
+      'a[href^="/tasks/"]',
     );
     if ((await taskLink.count()) > 0) {
       await taskLink.first().click();
@@ -83,7 +83,7 @@ test.describe("Sprint 1: AI-Manager task flow", () => {
     await page.waitForURL(/\/dashboard/);
 
     const taskLink = page.locator(
-      'a[href^="/dashboard/tasks/"]',
+      'a[href^="/tasks/"]',
     );
     if ((await taskLink.count()) > 0) {
       await taskLink.first().click();
@@ -103,7 +103,7 @@ test.describe("Sprint 1: AI-Manager task flow", () => {
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/dashboard/);
 
-    await page.click('a[href="/dashboard/new-task"]');
+    await page.click('a[href="/new-task"]');
     await page.waitForURL(/\/new-task/);
 
     await expect(

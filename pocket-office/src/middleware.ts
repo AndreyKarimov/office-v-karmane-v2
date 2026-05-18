@@ -1,13 +1,18 @@
 import { auth } from "@/lib/auth";
 
+const PROTECTED_PREFIXES = ["/dashboard", "/tasks", "/new-task", "/team", "/audit", "/billing"];
+const AUTH_ROUTES = ["/login", "/register"];
+
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
-  const isDashboardRoute = req.nextUrl.pathname.startsWith("/dashboard");
-  const isAuthRoute = ["/login", "/register"].includes(req.nextUrl.pathname);
+  const pathname = req.nextUrl.pathname;
 
-  if (isDashboardRoute && !isLoggedIn) {
+  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+  const isAuthRoute = AUTH_ROUTES.includes(pathname);
+
+  if (isProtected && !isLoggedIn) {
     const signInUrl = new URL("/login", req.nextUrl.origin);
-    signInUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
+    signInUrl.searchParams.set("callbackUrl", pathname);
     return Response.redirect(signInUrl);
   }
 

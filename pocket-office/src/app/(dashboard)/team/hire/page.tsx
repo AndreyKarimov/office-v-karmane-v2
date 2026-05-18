@@ -61,7 +61,7 @@ export default function HirePage() {
     setLoading(false);
 
     if (result.success) {
-      router.push("/dashboard/team");
+      router.push("/team");
       router.refresh();
     } else {
       setError(result.error || "Ошибка найма");
@@ -71,7 +71,7 @@ export default function HirePage() {
   return (
     <div className="max-w-2xl mx-auto p-4 md:p-6">
       <nav className="text-label-md text-on-surface-variant mb-4">
-        <Link href="/dashboard/team" className="hover:text-primary">
+        <Link href="/team" className="hover:text-primary">
           Моя команда
         </Link>
         <span className="mx-2">/</span>
@@ -135,7 +135,7 @@ export default function HirePage() {
               <Button onClick={handleGeneratePrompt} disabled={!role.trim() || !skills.trim()}>
                 Сгенерировать промпт и продолжить
               </Button>
-              <Link href="/dashboard/team">
+              <Link href="/team">
                 <Button variant="ghost" type="button">Отмена</Button>
               </Link>
             </div>

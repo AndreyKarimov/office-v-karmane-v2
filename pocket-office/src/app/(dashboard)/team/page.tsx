@@ -17,7 +17,7 @@ export default async function TeamPage() {
             Управляйте ИИ-сотрудниками — нанимайте, настраивайте, контролируйте
           </p>
         </div>
-        <Link href="/dashboard/team/hire">
+        <Link href="/team/hire">
           <Button variant="ai" size="sm">+ Нанять сотрудника</Button>
         </Link>
       </div>
@@ -29,7 +29,7 @@ export default async function TeamPage() {
           <p className="text-body-md text-on-surface-variant mb-4">
             Наймите первого ИИ-сотрудника, чтобы он мог выполнять подзадачи
           </p>
-          <Link href="/dashboard/team/hire">
+          <Link href="/team/hire">
             <Button variant="ai">Нанять сотрудника</Button>
           </Link>
         </div>
@@ -67,7 +67,7 @@ export default async function TeamPage() {
           );
         })}
 
-        <Link href="/dashboard/team/hire">
+        <Link href="/team/hire">
           <Card className="flex flex-col items-center justify-center p-5 border-2 border-dashed border-outline-variant bg-transparent min-h-[200px] cursor-pointer hover:border-secondary/50 transition-colors">
             <div className="text-3xl mb-2 opacity-30">🤖+</div>
             <p className="text-body-md text-outline mb-3">Нанять ИИ-сотрудника</p>

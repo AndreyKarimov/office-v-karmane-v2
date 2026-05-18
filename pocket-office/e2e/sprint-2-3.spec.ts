@@ -8,7 +8,7 @@ test.describe("Sprint 2: Task lifecycle", () => {
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/dashboard/);
 
-    const taskLink = page.locator('a[href^="/dashboard/tasks/"]');
+    const taskLink = page.locator('a[href^="/tasks/"]');
     if ((await taskLink.count()) > 0) {
       await taskLink.first().click();
       await page.waitForURL(/\/tasks\//);
@@ -45,7 +45,7 @@ test.describe("Sprint 2: Task lifecycle", () => {
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/dashboard/);
 
-    await page.click('a[href="/dashboard/new-task"]');
+    await page.click('a[href="/new-task"]');
     await page.waitForURL(/\/new-task/);
     await expect(page.locator("text=Создание задачи")).toBeVisible({ timeout: 10000 });
   });
@@ -59,7 +59,7 @@ test.describe("Sprint 3: AI Coworkers", () => {
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/dashboard/);
 
-    await page.goto("/dashboard/team");
+    await page.goto("/team");
     await expect(page.locator("text=Моя команда")).toBeVisible({ timeout: 10000 });
     await expect(page.locator("text=Нанять сотрудника")).toBeVisible();
   });
@@ -71,7 +71,7 @@ test.describe("Sprint 3: AI Coworkers", () => {
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/dashboard/);
 
-    await page.goto("/dashboard/team/hire");
+    await page.goto("/team/hire");
     await expect(page.locator("text=Нанять ИИ-сотрудника")).toBeVisible({ timeout: 10000 });
     await expect(page.locator('input[id="имя-сотрудника"]')).toBeVisible();
     await expect(page.locator('input[id="роль"]')).toBeVisible();
@@ -95,7 +95,7 @@ test.describe("Sprint 3: AI Coworkers", () => {
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/dashboard/);
 
-    const taskLink = page.locator('a[href^="/dashboard/tasks/"]');
+    const taskLink = page.locator('a[href^="/tasks/"]');
     if ((await taskLink.count()) > 0) {
       await taskLink.first().click();
       await page.waitForURL(/\/tasks\//);

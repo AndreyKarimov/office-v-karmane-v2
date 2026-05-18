@@ -44,7 +44,7 @@ export function CreateTaskForm({
 
       await runAIAnalysis(task.id);
 
-      router.push(`/dashboard/tasks/${task.id}`);
+      router.push(`/tasks/${task.id}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка создания задачи");
